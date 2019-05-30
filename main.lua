@@ -1,6 +1,7 @@
 local dogbutt, loaf, grit
 local loaves = {}
 local grittys = {}
+local loaf_width = 35
 local stage = {
     width = 0,
     height = 0
@@ -33,6 +34,12 @@ function love.draw()
     draw_butt()
 end
 
+function love.keyreleased(key)
+    if key == "space" then
+        drop_snack()
+    end
+end
+
 function love.update(dt)
     move_butt(dt)
     move_grittys(dt)
@@ -42,7 +49,7 @@ function love.update(dt)
     end
 
     detect_gritty_collisions()
-    detect_loaf_collisions()
+    -- detect_loaf_collisions()
 end
 
 -- HELPER METHODS
@@ -138,8 +145,8 @@ function change_room(position)
 end
 
 function build_room()
-    local loaf_count = math.random(50)
-    local gritty_count = math.random(3)
+    local loaf_count = 0 -- math.random(50)
+    local gritty_count = 1 -- math.random(3)
 
     for i=1, loaf_count do
         add_random_loaf()
@@ -150,15 +157,21 @@ function build_room()
     end
 end
 
-function add_random_loaf()
-    local loaf_width = 35
+function add_loaf(x, y)
     local buffer = 5
 
     loaves[#loaves+1] = {
-        x = math.random(stage.width - loaf_width - buffer),
-        y = math.random(stage.height - loaf_width - buffer),
+        x = x,
+        y = y,
         width = loaf_width
     }
+end
+
+function add_random_loaf()
+    add_loaf(
+        math.random(stage.width - loaf_width - buffer),
+        math.random(stage.height - loaf_width - buffer)
+    )
 end
 
 function add_random_gritty()
@@ -170,11 +183,11 @@ function add_random_gritty()
     dx = speed
     dy = speed
 
-    if math.random(2) == 2 then
+    if coin_flip() then
         dx = -1 * dx
     end
 
-    if math.random(2) == 2 then
+    if coin_flip() then
         dy = -1 * dy
     end
 
@@ -264,4 +277,13 @@ end
 
 function check_collision(x1,y1,w1,h1, x2,y2,w2,h2)
     return x1 < x2+w2 and x2 < x1+w1 and y1 < y2+h2 and y2 < y1+h1
+end
+
+function coin_flip()
+    return math.random(2) == 2
+end
+
+function drop_snack()
+    local offset = (box.width / 2) - (loaf_width / 2)
+    add_loaf(box.x + offset, box.y + offset)
 end
