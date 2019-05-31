@@ -248,7 +248,7 @@ function detect_loaf_collisions()
     for i=1, #loaves do
         local lorf = loaves[i]
 
-        if check_collision(butt.pos.x,butt.pos.y,butt.width,butt.width, lorf.pos.x,lorf.pos.y,lorf.width,lorf.width) then
+        if check_collision(butt.pos,butt.width,butt.width, lorf.pos,lorf.width,lorf.width) then
             hits[#hits+1] = i
         end
     end
@@ -268,7 +268,7 @@ function detect_gritty_collisions()
     for i=1, #grittys do
         local gritty = grittys[i]
 
-        if check_collision(butt.pos.x,butt.pos.y,butt.width,butt.width, gritty.pos.x,gritty.pos.y,gritty.width,gritty.width) then
+        if check_collision(butt.pos,butt.width,butt.width, gritty.pos,gritty.width,gritty.width) then
             print "hitty gritty"
         end
 
@@ -283,7 +283,7 @@ function detect_gritty_loaf_collisions(gritty)
     for i=1, #loaves do
         local lorf = loaves[i]
 
-        if check_collision(gritty.pos.x,gritty.pos.y,gritty.width,gritty.width, lorf.pos.x,lorf.pos.y,lorf.width,lorf.width) then
+        if check_collision(gritty.pos,gritty.width,gritty.width, lorf.pos,lorf.width,lorf.width) then
             hits[#hits+1] = i
         end
     end
@@ -296,8 +296,8 @@ function detect_gritty_loaf_collisions(gritty)
     stats.gritty_loaves = stats.gritty_loaves + #hits
 end
 
-function check_collision(x1,y1,w1,h1, x2,y2,w2,h2)
-    return x1 < x2+w2 and x2 < x1+w1 and y1 < y2+h2 and y2 < y1+h1
+function check_collision(pos1,w1,h1, pos2,w2,h2)
+    return pos1.x < pos2.x+w2 and pos2.x < pos1.x+w1 and pos1.y < pos2.y+h2 and pos2.y < pos1.y+h1
 end
 
 function drop_snack()
