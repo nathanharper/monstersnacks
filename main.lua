@@ -1,3 +1,5 @@
+local vector = require "hump.vector"
+
 local dogbutt, loaf, grit
 local loaves = {}
 local grittys = {}
@@ -6,9 +8,8 @@ local stage = {
     width = 0,
     height = 0
 }
-local box = {
-    x = 20,
-    y = 50,
+local butt = {
+    pos = vector(20, 50),
     width = 60,
     speed = 200
 }
@@ -61,8 +62,8 @@ function load_assets()
 end
 
 function draw_butt()
-    love.graphics.draw(dogbutt, box.x, box.y)
-    -- love.graphics.rectangle("fill", box.x, box.y, box.width, box.width)
+    love.graphics.draw(dogbutt, butt.pos.x, butt.pos.y)
+    -- love.graphics.rectangle("fill", butt.pos.x, butt.pos.y, butt.width, butt.width)
 end
 
 function draw_loaves()
@@ -75,47 +76,47 @@ function draw_grittys()
     for i=1, #grittys do
         local gritty = grittys[i]
 
-        love.graphics.draw(grit, gritty.x, gritty.y)
+        love.graphics.draw(grit, gritty.pos.x, gritty.pos.y)
     end
 end
 
 function move_butt(dt)
-    if love.keyboard.isDown("up") then
-        box.y = box.y - dt * box.speed
-    end
+    local delta = vector(0, 0)
 
-    if love.keyboard.isDown("down") then
-        box.y = box.y + dt * box.speed
+    if love.keyboard.isDown("up") then
+        delta.y = -1
+    elseif love.keyboard.isDown("down") then
+        delta.y = 1
     end
 
     if love.keyboard.isDown("left") then
-        box.x = box.x - dt * box.speed
+        delta.x = -1
+    elseif love.keyboard.isDown("right") then
+        delta.x = 1
     end
 
-    if love.keyboard.isDown("right") then
-        box.x = box.x + dt * box.speed
-    end
+    butt.pos = butt.pos + butt.speed * dt * delta
 end
 
 function check_boundary()
-    local buffer = box.width / 2
+    local buffer = butt.width / 2
 
-    if box.y < -buffer then
+    if butt.pos.y < -buffer then
         change_room("bottom")
         return true
     end
 
-    if box.y + box.width > stage.height + buffer then
+    if butt.pos.y + butt.width > stage.height + buffer then
         change_room("top")
         return true
     end
 
-    if box.x < -buffer then
+    if butt.pos.x < -buffer then
         change_room("right")
         return true
     end
 
-    if box.x + box.width > stage.width + buffer then
+    if butt.pos.x + butt.width > stage.width + buffer then
         change_room("left")
         return true
     end
@@ -129,13 +130,13 @@ function change_room(position)
     clear_room()
 
     if position == "top" then
-        box.y = buffer
+        butt.pos.y = buffer
     elseif position == "bottom" then
-        box.y = stage.height - box.width - buffer
+        butt.pos.y = stage.height - butt.width - buffer
     elseif position == "left" then
-        box.x = buffer
+        butt.pos.x = buffer
     elseif position == "right" then
-        box.x = stage.width - box.width - buffer
+        butt.pos.x = stage.width - butt.width - buffer
     end
 
     build_room()
@@ -175,44 +176,81 @@ function add_random_loaf()
 end
 
 function add_random_gritty()
-    local dx, dy
     local speed = 100
     local gritty_width = 55
     local buffer = 5
 
-    dx = speed
-    dy = speed
+    local delta = vector(1, 1)
 
     if coin_flip() then
-        dx = -1 * dx
+        delta.x = -1
     end
 
     if coin_flip() then
-        dy = -1 * dy
+        delta.y = -1
     end
 
     grittys[#grittys+1] = {
-        x = math.random(stage.width - gritty_width - buffer),
-        y = math.random(stage.height - gritty_width - buffer),
+        pos = vector(
+            math.random(stage.width - gritty_width - buffer),
+            math.random(stage.height - gritty_width - buffer)
+        ),
         width = gritty_width,
-        dx = dx,
-        dy = dy
+        delta = delta,
+        speed = speed
     }
 end
 
 function move_grittys(dt)
-    for i=1, #grittys do
-        grittys[i].x = grittys[i].x + grittys[i].dx * dt
-        grittys[i].y = grittys[i].y + grittys[i].dy * dt
+    if #loaves == 0 then
+        for i=1, #grittys do
+            local gritty = grittys[i]
 
-        if grittys[i].x <= 0 or grittys[i].x + grittys[i].width >= stage.width then
-            grittys[i].dx = -1 * grittys[i].dx
+            gritty.pos = gritty.pos + gritty.delta * gritty.speed * dt
+
+            if (gritty.pos.x <= 0 and gritty.delta.x < 0)
+                or (gritty.pos.x + gritty.width >= stage.width and gritty.delta.x > 0)
+            then
+                gritty.delta.x = -1 * gritty.delta.x
+            end
+
+            if (gritty.pos.y <= 0 and gritty.delta.y < 0)
+                or (gritty.pos.y + gritty.width >= stage.height and gritty.delta.y > 0)
+            then
+                gritty.delta.y = -1 * gritty.delta.y
+            end
         end
+    else
+        for i=1, #grittys do
+            local gritty = grittys[i]
+            local snak = find_closest_snack(gritty)
 
-        if grittys[i].y <= 0 or grittys[i].y + grittys[i].width >= stage.height then
-            grittys[i].dy = -1 * grittys[i].dy
+            if snak ~= nil then
+            else
+                -- no snak
+            end
         end
     end
+end
+
+function find_closest_snack(gritty)
+    local closest = nil
+    local shortest_distance = nil
+
+    for i=1, #loaves do
+        local snak = loaves[i]
+
+        local a = math.abs(gritty.pos.x - snak.x)
+        local b = math.abs(gritty.pos.y - snak.y)
+        local distance = math.sqrt(a^2 + b^2)
+
+        if closest == nil or distance < shortest_distance then
+            closest = snak
+            shortest_distance = distance
+        end
+    end
+
+    return closest
 end
 
 function clear_room()
@@ -226,7 +264,7 @@ function detect_loaf_collisions()
     for i=1, #loaves do
         local lorf = loaves[i]
 
-        if check_collision(box.x,box.y,box.width,box.width, lorf.x,lorf.y,lorf.width,lorf.width) then
+        if check_collision(butt.pos.x,butt.pos.y,butt.width,butt.width, lorf.x,lorf.y,lorf.width,lorf.width) then
             hits[#hits+1] = i
         end
     end
@@ -246,7 +284,7 @@ function detect_gritty_collisions()
     for i=1, #grittys do
         local gritty = grittys[i]
 
-        if check_collision(box.x,box.y,box.width,box.width, gritty.x,gritty.y,gritty.width,gritty.width) then
+        if check_collision(butt.pos.x,butt.pos.y,butt.width,butt.width, gritty.pos.x,gritty.pos.y,gritty.width,gritty.width) then
             print "hitty gritty"
         end
 
@@ -261,15 +299,14 @@ function detect_gritty_loaf_collisions(gritty)
     for i=1, #loaves do
         local lorf = loaves[i]
 
-        if check_collision(gritty.x,gritty.y,gritty.width,gritty.width, lorf.x,lorf.y,lorf.width,lorf.width) then
+        if check_collision(gritty.pos.x,gritty.pos.y,gritty.width,gritty.width, lorf.x,lorf.y,lorf.width,lorf.width) then
             hits[#hits+1] = i
         end
     end
 
     for i=#hits, 1, -1 do
         table.remove(loaves, hits[i])
-        gritty.dx = gritty.dx * speedup
-        gritty.dy = gritty.dy * speedup
+        gritty.speed = gritty.speed * speedup
     end
 
     stats.gritty_loaves = stats.gritty_loaves + #hits
@@ -284,6 +321,6 @@ function coin_flip()
 end
 
 function drop_snack()
-    local offset = (box.width / 2) - (loaf_width / 2)
-    add_loaf(box.x + offset, box.y + offset)
+    local offset = (butt.width / 2) - (loaf_width / 2)
+    add_loaf(butt.pos.x + offset, butt.pos.y + offset)
 end
