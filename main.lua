@@ -68,7 +68,7 @@ end
 
 function draw_loaves()
     for i=1, #loaves do
-        love.graphics.draw(loaf, loaves[i].x, loaves[i].y)
+        love.graphics.draw(loaf, loaves[i].pos.x, loaves[i].pos.y)
     end
 end
 
@@ -162,8 +162,7 @@ function add_loaf(x, y)
     local buffer = 5
 
     loaves[#loaves+1] = {
-        x = x,
-        y = y,
+        pos = vector(x, y),
         width = loaf_width
     }
 end
@@ -180,23 +179,13 @@ function add_random_gritty()
     local gritty_width = 55
     local buffer = 5
 
-    local delta = vector(1, 1)
-
-    if coin_flip() then
-        delta.x = -1
-    end
-
-    if coin_flip() then
-        delta.y = -1
-    end
-
     grittys[#grittys+1] = {
         pos = vector(
             math.random(stage.width - gritty_width - buffer),
             math.random(stage.height - gritty_width - buffer)
         ),
         width = gritty_width,
-        delta = delta,
+        delta = vector.randomDirection(),
         speed = speed
     }
 end
@@ -225,10 +214,8 @@ function move_grittys(dt)
             local gritty = grittys[i]
             local snak = find_closest_snack(gritty)
 
-            if snak ~= nil then
-            else
-                -- no snak
-            end
+            gritty.delta = (snak.pos - gritty.pos):normalized()
+            gritty.pos = gritty.pos + gritty.delta * gritty.speed * dt
         end
     end
 end
@@ -239,10 +226,7 @@ function find_closest_snack(gritty)
 
     for i=1, #loaves do
         local snak = loaves[i]
-
-        local a = math.abs(gritty.pos.x - snak.x)
-        local b = math.abs(gritty.pos.y - snak.y)
-        local distance = math.sqrt(a^2 + b^2)
+        local distance = gritty.pos:dist(snak.pos)
 
         if closest == nil or distance < shortest_distance then
             closest = snak
@@ -264,7 +248,7 @@ function detect_loaf_collisions()
     for i=1, #loaves do
         local lorf = loaves[i]
 
-        if check_collision(butt.pos.x,butt.pos.y,butt.width,butt.width, lorf.x,lorf.y,lorf.width,lorf.width) then
+        if check_collision(butt.pos.x,butt.pos.y,butt.width,butt.width, lorf.pos.x,lorf.pos.y,lorf.width,lorf.width) then
             hits[#hits+1] = i
         end
     end
@@ -299,7 +283,7 @@ function detect_gritty_loaf_collisions(gritty)
     for i=1, #loaves do
         local lorf = loaves[i]
 
-        if check_collision(gritty.pos.x,gritty.pos.y,gritty.width,gritty.width, lorf.x,lorf.y,lorf.width,lorf.width) then
+        if check_collision(gritty.pos.x,gritty.pos.y,gritty.width,gritty.width, lorf.pos.x,lorf.pos.y,lorf.width,lorf.width) then
             hits[#hits+1] = i
         end
     end
@@ -314,10 +298,6 @@ end
 
 function check_collision(x1,y1,w1,h1, x2,y2,w2,h2)
     return x1 < x2+w2 and x2 < x1+w1 and y1 < y2+h2 and y2 < y1+h1
-end
-
-function coin_flip()
-    return math.random(2) == 2
 end
 
 function drop_snack()
