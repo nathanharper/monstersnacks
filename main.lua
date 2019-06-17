@@ -30,6 +30,7 @@ function love.load()
 end
 
 function love.draw()
+    -- draw_background()
     draw_loaves()
     draw_grittys()
     draw_butt()
@@ -59,6 +60,15 @@ function load_assets()
     dogbutt = love.graphics.newImage("images/dogbutt2.png")
     loaf = love.graphics.newImage("images/loaf.png")
     grit = love.graphics.newImage("images/grit2.jpg")
+    background = love.graphics.newImage("images/pride.png")
+end
+
+function draw_background()
+    for i=0, love.graphics.getWidth() / background:getWidth() do
+        for j=0, love.graphics.getHeight() / background:getHeight() do
+            love.graphics.draw(background, i * background:getWidth(), j * background:getHeight())
+        end
+    end
 end
 
 function draw_butt()
@@ -147,7 +157,7 @@ end
 
 function build_room()
     local loaf_count = 0 -- math.random(50)
-    local gritty_count = 1 -- math.random(3)
+    local gritty_count = math.random(3)
 
     for i=1, loaf_count do
         add_random_loaf()
@@ -159,8 +169,6 @@ function build_room()
 end
 
 function add_loaf(x, y)
-    local buffer = 5
-
     loaves[#loaves+1] = {
         pos = vector(x, y),
         width = loaf_width
@@ -168,6 +176,8 @@ function add_loaf(x, y)
 end
 
 function add_random_loaf()
+    local buffer = 5
+
     add_loaf(
         math.random(stage.width - loaf_width - buffer),
         math.random(stage.height - loaf_width - buffer)
